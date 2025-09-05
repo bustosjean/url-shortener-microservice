@@ -12,5 +12,16 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bustosjean/url-shortener-microservice.git"
+  },
+  "keywords": [],
+  "author": "",
+  "bugs": {
+    "url": "https://github.com/bustosjean/url-shortener-microservice/issues"
+  },
+  "homepage": "https://github.com/bustosjean/url-shortener-microservice#readme"
 }

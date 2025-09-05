@@ -1,24 +1,61 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const app = express();
+const express = require("express");
+const bodyParser = require("body-parser");
+const dns = require("dns");
+const { URL } = require("url");
 
-// Basic Configuration
+const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+// Middlewares
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use(express.static("public"));
 
-app.use('/public', express.static(`${process.cwd()}/public`));
-
-app.get('/', function(req, res) {
-  res.sendFile(process.cwd() + '/views/index.html');
+// Base route
+app.get("/", (req, res) => {
+  res.sendFile(__dirname + "/views/index.html");
 });
 
-// Your first API endpoint
-app.get('/api/hello', function(req, res) {
-  res.json({ greeting: 'hello API' });
+// Base de datos temporal (array)
+const urlDB = [];
+let counter = 1;
+
+// POST /api/shorturl
+app.post("/api/shorturl", (req, res) => {
+  const originalUrl = req.body.url;
+
+  let hostname;
+  try {
+    hostname = new URL(originalUrl).hostname;
+  } catch (err) {
+    return res.json({ error: "invalid url" });
+  }
+
+  // Validar si el host existe
+  dns.lookup(hostname, (err) => {
+    if (err) {
+      return res.json({ error: "invalid url" });
+    }
+
+    // Guardar URL y asignar short_url
+    const short_url = counter++;
+    urlDB.push({ original_url: originalUrl, short_url });
+    res.json({ original_url: originalUrl, short_url });
+  });
 });
 
-app.listen(port, function() {
-  console.log(`Listening on port ${port}`);
+// GET /api/shorturl/:short_url
+app.get("/api/shorturl/:short_url", (req, res) => {
+  const short_url = parseInt(req.params.short_url);
+  const entry = urlDB.find((item) => item.short_url === short_url);
+
+  if (entry) {
+    return res.redirect(entry.original_url);
+  } else {
+    return res.json({ error: "No short URL found for the given input" });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
 });
