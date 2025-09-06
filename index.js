@@ -24,6 +24,11 @@ let counter = 1;
 app.post("/api/shorturl", (req, res) => {
   const originalUrl = req.body.url;
 
+  // Validar formato: debe empezar con http:// o https://
+  if (!/^https?:\/\/.+/.test(originalUrl)) {
+    return res.json({ error: "invalid url" });
+  }
+
   let hostname;
   try {
     hostname = new URL(originalUrl).hostname;
@@ -31,7 +36,7 @@ app.post("/api/shorturl", (req, res) => {
     return res.json({ error: "invalid url" });
   }
 
-  // Validar si el host existe
+  // Validar que el host existe usando DNS
   dns.lookup(hostname, (err) => {
     if (err) {
       return res.json({ error: "invalid url" });
