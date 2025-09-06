@@ -1,30 +1,32 @@
+require("dotenv").config();
 const express = require("express");
-const bodyParser = require("body-parser");
+const cors = require("cors");
 const dns = require("dns");
 const { URL } = require("url");
 
 const app = express();
+
+// Basic Configuration
 const port = process.env.PORT || 3000;
 
-// Middlewares
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
-app.use(express.static("public"));
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Base route
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/views/index.html");
-});
-
-// Base de datos temporal (array)
-const urlDB = [];
+// Base de datos en memoria
+let urlDB = [];
 let counter = 1;
 
-// POST /api/shorturl
+// Rutas
+app.get("/", function (req, res) {
+  res.sendFile(process.cwd() + "/views/index.html");
+});
+
+// POST para acortar la URL
 app.post("/api/shorturl", (req, res) => {
   const originalUrl = req.body.url;
 
-  // Validar formato: debe empezar con http:// o https://
+  // Validar que comience con http:// o https://
   if (!/^https?:\/\/.+/.test(originalUrl)) {
     return res.json({ error: "invalid url" });
   }
@@ -36,31 +38,32 @@ app.post("/api/shorturl", (req, res) => {
     return res.json({ error: "invalid url" });
   }
 
-  // Validar que el host existe usando DNS
+  // Verificar que el dominio exista
   dns.lookup(hostname, (err) => {
     if (err) {
       return res.json({ error: "invalid url" });
     }
 
-    // Guardar URL y asignar short_url
     const short_url = counter++;
     urlDB.push({ original_url: originalUrl, short_url });
+
+    // Respuesta EXACTA como espera freeCodeCamp
     res.json({ original_url: originalUrl, short_url });
   });
 });
 
-// GET /api/shorturl/:short_url
+// GET para redirigir
 app.get("/api/shorturl/:short_url", (req, res) => {
-  const short_url = parseInt(req.params.short_url);
-  const entry = urlDB.find((item) => item.short_url === short_url);
+  const { short_url } = req.params;
+  const entry = urlDB.find((item) => item.short_url == short_url);
 
   if (entry) {
-    return res.redirect(entry.original_url);
+    return res.redirect(entry.original_url); // Redirección real
   } else {
     return res.json({ error: "No short URL found for the given input" });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+app.listen(port, function () {
+  console.log(`Listening on port ${port}`);
 });
